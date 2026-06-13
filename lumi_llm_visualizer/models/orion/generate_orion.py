@@ -10,10 +10,10 @@ def alusta_orion_malli():
     config = {
         "d_model": 64,
         "n_heads": 4,
-        "d_ff": 128,
+        "d_ff": 256,
         "n_layers": 3,
         "max_seq_len": 20,
-        "dropout": 0.1,
+        "dropout": 0.05,
         "vocab_path": "vocab.txt",
         "dataset_path": "dataset.txt",
         "word_types": {
