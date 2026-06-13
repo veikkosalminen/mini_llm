@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumi LLM - Interaktiivinen Visualisoija</title>
+    <!-- Google Fonts Outfit & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    <!-- CSS Tyylit -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header class="app-header">
+        <div class="logo-area">
+            <div class="glow-dot animate-glow"></div>
+            <h1>LUMI LLM</h1>
+            <span class="badge">Leikkikielimallin Ohjauspaneeli</span>
+        </div>
+        
+        <div class="model-select-area" style="display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); padding: 6px 14px; border-radius: 8px;">
+            <label for="model-selector" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Valitse malli:</label>
+            <select id="model-selector" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 0.8rem; font-family: var(--font-sans); outline: none; cursor: pointer; font-weight: bold; padding: 4px 10px; border-radius: 6px;">
+                <option value="lumi">lumi</option>
+            </select>
+        </div>
+
+        <div class="device-status">
+            <span>Käynnissä laitteella:</span>
+            <strong id="device-name" class="neon-text-blue">-</strong>
+        </div>
+    </header>
+
+    <main class="dashboard-grid">
+        <!-- VASEN SARAKE: Koulutus ja Generointi -->
+        <section class="left-column">
+            
+            <!-- 1. Koulutuksen Hallinta -->
+            <div class="card glass">
+                <div class="card-header">
+                    <h2>Koulutuksen Hallinta</h2>
+                    <div class="pulse-indicator" id="train-pulse"></div>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <span class="stat-label">Epoch</span>
+                        <strong class="stat-val" id="stat-epoch">0</strong>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Häviö (Loss)</span>
+                        <strong class="stat-val neon-text-purple" id="stat-loss">0.0000</strong>
+                    </div>
+                </div>
+                <div class="control-buttons">
+                    <button id="btn-train-1" class="btn btn-secondary">Kouluta 1 Epoch</button>
+                    <button id="btn-train-10" class="btn btn-secondary">Kouluta 10 Epochia</button>
+                    <button id="btn-train-toggle" class="btn btn-primary">Aloita automaattinen koulutus</button>
+                    <button id="btn-reset" class="btn btn-danger">Nollaa malli</button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="lossChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 2. Tekstin Generointi (Prompter) -->
+            <div class="card glass">
+                <div class="card-header">
+                    <h2>Tekstin Generointi (Prompter)</h2>
+                </div>
+                <div class="form-group">
+                    <label for="prompt-input">Syöte (Prompt):</label>
+                    <input type="text" id="prompt-input" value="<bos> kissa jahtaa" autocomplete="off">
+                    <small>Käytä sanoja: &lt;bos&gt;, &lt;eos&gt;, kissa, koira, hiiri, kala, juusto, katsoo, jahtaa, syö, nukkuu, ja, hyvin</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="temp-slider">Lämpötila (Temperature): <span id="temp-val" class="neon-text-blue">0.7</span></label>
+                    <input type="range" id="temp-slider" min="0.1" max="2.0" step="0.1" value="0.7">
+                </div>
+
+                <div class="control-buttons">
+                    <button id="btn-gen-step" class="btn btn-primary">Generoi 1 token (Askel)</button>
+                    <button id="btn-gen-auto" class="btn btn-success">Generoi lause loppuun</button>
+                    <button id="btn-clear-prompt" class="btn btn-secondary">Tyhjennä</button>
+                </div>
+
+                <div class="prompt-output-box">
+                    <div class="output-label">Nykyinen lause:</div>
+                    <div id="prompt-output" class="output-text">&lt;bos&gt; kissa jahtaa</div>
+                </div>
+
+                <div class="probs-section">
+                    <h3>Seuraavan sanan todennäköisyydet:</h3>
+                    <div id="probs-list" class="probs-list">
+                        <!-- Täytetään JS-koodilla -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- OIKEA SARAKE: Mallin Sisäiset Tilat -->
+        <section class="right-column">
+            <div class="card glass main-inspector">
+                <div class="card-header tab-header">
+                    <h2>Mallin Sisäiset Tilat</h2>
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="attention">Attention-kartat</button>
+                        <button class="tab-btn" data-tab="vectors">Piilovektorit (Hidden States)</button>
+                        <button class="tab-btn" data-tab="weights">Mallin Painot (Weights)</button>
+                        <button class="tab-btn" data-tab="vocab">Sanasto (Vocabulary)</button>
+                        <button class="tab-btn" data-tab="data">Koulutusdata (Dataset)</button>
+                        <button class="tab-btn" data-tab="batch">Erägenerointi (Batch)</button>
+                    </div>
+                </div>
+                <!-- A. Tab: Attention Map -->
+                <div id="tab-attention" class="tab-content active">
+                    <div class="visualization-container" style="width: 100%; align-items: center; justify-content: center;">
+                        <div id="attention-heatmap" class="heatmap-wrapper" style="max-width: 100%; width: 100%; display: flex; justify-content: center; align-items: center;">
+                            <!-- Piirretään dynaamisesti -->
+                            <div class="placeholder-text" style="text-align: center; width: 100%; padding: 40px 0;">Aja tekstin generointi nähdäksesi huomiokartat!</div>
+                        </div>
+                        <div id="attention-tooltip" class="tooltip glass" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <!-- B. Tab: Hidden Vectors -->
+                <div id="tab-vectors" class="tab-content">
+                    <div class="tab-controls" style="display: none;">
+                        <div class="select-group">
+                            <label for="vector-stage-select">Tarkastelupiste (Checkpoint):</label>
+                            <select id="vector-stage-select">
+                                <option value="token_embeddings">Token Embeddings (Sana-embeddingit)</option>
+                                <option value="positional_embeddings">Positional Embeddings (Paikkatieto-embeddingit)</option>
+                                <option value="after_embedding">Yhdistetyt Embeddingit (Input to Block 1)</option>
+                                <option value="after_layer_0_attention">Lohko 1 Attention jälkeen</option>
+                                <option value="after_layer_0_ffn">Lohko 1 jälkeen (Input to Block 2)</option>
+                                <option value="after_layer_1_attention">Lohko 2 Attention jälkeen</option>
+                                <option value="after_layer_1_ffn">Lohko 2 jälkeen (Lohkojen lopputulos)</option>
+                                <option value="final_norm">Lopullinen RMSNorm (Input to LM Head)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="visualization-container">
+                        <div class="vector-legend">
+                            <span>Arvot: </span>
+                            <div class="legend-scale">
+                                <span class="legend-min">Min (Negatiivinen)</span>
+                                <div class="gradient-bar"></div>
+                                <span class="legend-max">Max (Positiivinen)</span>
+                            </div>
+                        </div>
+                        <div id="vectors-grid" class="vectors-grid-wrapper">
+                            <!-- Piirretään dynaamisesti -->
+                            <div class="placeholder-text">Aja tekstin generointi nähdäksesi piilovektorit!</div>
+                        </div>
+                        <div id="vector-tooltip" class="tooltip glass" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <!-- C. Tab: Model Weights -->
+                <div id="tab-weights" class="tab-content">
+                    <!-- Vasen puoli: Vuokaavioalue (ottaa kaiken vapaan tilan ja rullautuu molempiin suuntiin) -->
+                    <div class="visualization-container" style="flex: 1; align-items: stretch; justify-content: flex-start; padding: 16px; overflow-y: auto; overflow-x: auto; height: 100%; min-height: unset; position: relative;">
+                        <div id="weights-grid" class="weights-stack-wrapper" style="width: 100%;">
+                            <!-- Vuokaavio piirretään JS:llä -->
+                            <div class="placeholder-text">Painot ladataan painamalla "Päivitä mallin painot".</div>
+                        </div>
+                        <div id="weight-matrix-tooltip" class="tooltip glass" style="display: none;"></div>
+                    </div>
+
+                    <!-- Oikea puoli: Sivupaneeli (tiivistetty hallintapaneeli) -->
+                    <div class="weights-side-controls" style="width: 230px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.04); border-radius: 12px; padding: 16px; height: fit-content; align-self: flex-start;">
+                        
+                        <!-- 1. Layer Selector -->
+                        <div class="select-group" style="margin: 0; display: flex; flex-direction: column; gap: 6px; width: 100%;">
+                            <label for="weights-layer-select" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Tarkastele kerrosta:</label>
+                            <select id="weights-layer-select" style="width: 100%; padding: 6px 10px; font-size: 0.82rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.10); border-radius: 6px; color:#fff; cursor: pointer; font-family: var(--font-sans); outline: none;">
+                                <option value="0">Kerros 0</option>
+                                <option value="1">Kerros 1</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 2. Refresh Button -->
+                        <button id="btn-refresh-weights" class="btn btn-primary" style="width: 100%; padding: 8px 12px; font-size: 0.82rem;">Päivitä mallin painot</button>
+                        
+                        <!-- 3. Color Legend -->
+                        <div class="vector-legend" style="margin: 0; display: flex; flex-direction: column; gap: 6px; font-size: 0.78rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; width: 100%;">
+                            <span style="color: var(--text-muted); font-weight: 600;">Painoarvot (Väriskaala):</span>
+                            <div class="legend-scale" style="display: flex; flex-direction: column; gap: 4px; margin: 0; width: 100%;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--text-muted);">
+                                    <span>Min (-)</span>
+                                    <span>Max (+)</span>
+                                </div>
+                                <div class="gradient-bar" style="width: 100%; height: 8px; border-radius: 4px; background: linear-gradient(to right, hsla(240, 80%, 55%, 1), rgba(255,255,255,0.1), hsla(0, 80%, 55%, 1));"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- D. Tab: Vocabulary -->
+                <div id="tab-vocab" class="tab-content">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        
+                        <!-- Vasen puoli: Sanastotaulukko ja Tokenizer -->
+                        <div style="display: flex; flex-direction: column; gap: 20px;">
+                            <div class="vocab-info-card glass" style="background: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255, 255, 255, 0.04); border-radius: 12px; padding: 16px;">
+                                <h3 style="margin-bottom: 8px; font-size: 1.05rem; color: var(--neon-blue);">Lumi-kielen sanasto (14 sanaa)</h3>
+                                <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px;">
+                                    Klikkaa sanaa nähdäksesi sen 32D embedding-vektorin oikealla!
+                                </p>
+                                <table class="vector-table" style="width: 100%; font-size: 0.8rem; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+                                            <th style="text-align: left; padding: 6px; color: var(--text-muted);">ID</th>
+                                            <th style="text-align: left; padding: 6px; color: var(--text-muted);">Sana</th>
+                                            <th style="text-align: left; padding: 6px; color: var(--text-muted);">Tyyppi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="vocab-table-body">
+                                        <!-- Täytetään JS-koodilla -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="card glass" style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.03); padding: 16px;">
+                                <h3 style="margin-bottom: 8px; font-size: 1.05rem; color: var(--neon-purple);">Interaktiivinen Tokenizer-testaaja</h3>
+                                <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px;">
+                                    Kirjoita tekstiä nähdäksesi tokenisoinnin. Klikkaa tokenia nähdäksesi sen embedding-vektorin!
+                                </p>
+                                <div class="form-group" style="margin-bottom: 12px;">
+                                    <input type="text" id="tokenizer-test-input" placeholder="Kokeile esim: kissa syö kala" autocomplete="off" style="width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px 14px; border-radius: 8px; color: #fff; font-family: var(--font-sans); font-size: 0.9rem; outline: none;">
+                                </div>
+                                <div id="tokenizer-test-output" style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 50px; padding: 10px; background: rgba(0, 0, 0, 0.3); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.03); align-items: center;">
+                                    <span style="color: var(--text-muted); font-style: italic; font-size: 0.8rem;">Kirjoita testataksesi...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Oikea puoli: Embedding Visualizer ja Similarity -->
+                        <div style="display: flex; flex-direction: column; gap: 20px;">
+                            <div class="card glass" style="background: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255, 255, 255, 0.04); padding: 16px;">
+                                <div class="card-header" style="margin-bottom: 12px;">
+                                    <h3 style="font-size: 1.05rem; color: var(--neon-blue);">Sana-Embedding (32D)</h3>
+                                    <span class="badge" id="selected-word-badge" style="font-family: var(--font-mono); font-size: 0.8rem;">Valitse sana</span>
+                                </div>
+                                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">
+                                    Embedding-vektori visualisoituna. Hover näyttää tarkan arvon.
+                                </p>
+                                <div class="vector-legend" style="margin-bottom: 12px; font-size: 0.75rem;">
+                                    <span>Skaala:</span>
+                                    <div class="legend-scale">
+                                        <span>Neg (-1.2)</span>
+                                        <div class="gradient-bar" style="width: 100px;"></div>
+                                        <span>Pos (+1.2)</span>
+                                    </div>
+                                </div>
+                                <div class="embedding-row-wrapper" id="embedding-visualizer-container">
+                                    <div class="placeholder-text" style="font-size: 0.8rem; padding: 16px;">Klikkaa jotain sanaa nähdäksesi embeddingin!</div>
+                                </div>
+                            </div>
+
+                            <div class="card glass" style="background: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255, 255, 255, 0.04); padding: 16px;">
+                                <h3 style="margin-bottom: 12px; font-size: 1.05rem; color: var(--neon-purple);">Vektoreiden kosinisimilaarisuus</h3>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                                    <div class="select-group">
+                                        <label for="compare-word-a" style="font-size: 0.75rem;">Sana A:</label>
+                                        <select id="compare-word-a" class="vocab-select" style="padding: 6px 10px; font-size: 0.8rem;"></select>
+                                    </div>
+                                    <div class="select-group">
+                                        <label for="compare-word-b" style="font-size: 0.75rem;">Sana B:</label>
+                                        <select id="compare-word-b" class="vocab-select" style="padding: 6px 10px; font-size: 0.8rem;"></select>
+                                    </div>
+                                </div>
+                                <div class="similarity-card" style="padding: 12px; border-radius: 10px; margin-top: 10px;">
+                                    <div class="similarity-result neon-text-purple" id="similarity-value" style="font-size: 1.5rem; margin: 4px 0;">0.0%</div>
+                                    <div class="embedding-row-wrapper" style="gap: 10px; margin-top: 12px;" id="compare-vectors-wrapper"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div id="embedding-tooltip" class="tooltip glass" style="display: none;"></div>
+                </div>
+
+                <!-- E. Tab: Dataset -->
+                <div id="tab-data" class="tab-content">
+                    <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px;">
+                        
+                        <!-- Vasen puoli: Aineistotilastot ja suodatettava lauselista -->
+                        <div style="display: flex; flex-direction: column; gap: 20px;">
+                            <div class="card glass" style="background: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255, 255, 255, 0.04); padding: 16px;">
+                                <h3 style="font-size: 1.05rem; color: var(--neon-blue); margin-bottom: 8px;">Koulutusaineiston tilastot</h3>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; font-size: 0.82rem;">
+                                    <div style="background: rgba(255,255,255,0.02); padding: 8px; border-radius: 6px; text-align: center;">
+                                        <span style="color: var(--text-muted); font-size: 0.75rem; display:block;">Lauseita yhteensä</span>
+                                        <strong style="font-size: 1.1rem;" id="dataset-total-sentences">1000</strong>
+                                    </div>
+                                    <div style="background: rgba(255,255,255,0.02); padding: 8px; border-radius: 6px; text-align: center;">
+                                        <span style="color: var(--text-muted); font-size: 0.75rem; display:block;">Uniikkeja lauseita</span>
+                                        <strong style="font-size: 1.1rem; color: var(--neon-green);" id="dataset-unique-sentences">-</strong>
+                                    </div>
+                                </div>
+                                <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Sanojen esiintymiskerrat datassa:</span>
+                                <div id="dataset-frequencies" class="freq-list" style="max-height: 120px; overflow-y: auto;">
+                                    <!-- Täytetään JS-koodilla -->
+                                </div>
+                            </div>
+
+                            <div class="card glass" style="background: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255, 255, 255, 0.04); padding: 16px;">
+                                <h3 style="font-size: 1.05rem; color: var(--neon-purple); margin-bottom: 8px;">Selaa ja hae lauseita</h3>
+                                <div class="form-group" style="margin-bottom: 12px;">
+                                    <input type="text" id="dataset-search-input" placeholder="Hae lauseita, esim: jahtaa" autocomplete="off" style="width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); padding: 8px 12px; border-radius: 8px; color: #fff; font-family: var(--font-sans); font-size: 0.85rem; outline: none;">
+                                </div>
+                                <div id="dataset-sentences-list" class="dataset-list" style="max-height: 250px;">
+                                    <!-- Täytetään lauseilla -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Oikea puoli: Next-token Prediction Alignment visualisoija -->
+                        <div class="card glass" style="background: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255, 255, 255, 0.04); padding: 16px; min-height: 520px; display: flex; flex-direction: column;">
+                            <h3 style="font-size: 1.05rem; color: var(--neon-blue); margin-bottom: 8px;">Seuraavan tokenin ennustuksen kartoitus (X &rarr; Y)</h3>
+                            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">
+                                Valitse lause vasemmalta nähdäksesi, kuinka se pilkotaan syötteeksi (Input X) ja tavoitteeksi (Target Y). Transformers-mallia koulutetaan ennustamaan kohdan t tokenilla kohdan t+1 tokenia.
+                            </p>
+                            
+                            <div id="alignment-selected-sentence" style="font-family: var(--font-mono); font-size: 0.95rem; font-weight: bold; background: rgba(0,0,0,0.3); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 16px; min-height: 42px; display: flex; align-items: center; justify-content: center; text-align: center; color: #fff;">
+                                <span style="font-style: italic; color: var(--text-muted); font-size: 0.85rem;">Klikkaa jotakin lausetta selauslistasta nähdäksesi sen X ja Y kohdistuksen</span>
+                            </div>
+
+                            <div id="alignment-grid-container" class="alignment-grid" style="display: none; overflow-y: auto; max-height: 480px;">
+                                <!-- Täytetään askeleittain -->
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- F. Tab: Batch Generation -->
+                <div id="tab-batch" class="tab-content">
+                    <div class="card glass" style="background: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255, 255, 255, 0.04); padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                            <div>
+                                <h3 style="font-size: 1.1rem; color: var(--neon-blue); margin-bottom: 4px;">Kielimallin Eräajogenerointi & Evaluointi</h3>
+                                <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0;">
+                                    Generoi useita lauseita kerralla ja testaa, kuinka hyvin malli noudattaa kissa-hiiri-koira -logiikkaa!
+                                </p>
+                            </div>
+                            
+                            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                                <div class="select-group">
+                                    <label for="batch-mode-select" style="font-size: 0.75rem; color: var(--text-muted);">Alustusprompterit:</label>
+                                    <select id="batch-mode-select" style="padding: 6px 10px; font-size: 0.8rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color:#fff;">
+                                        <option value="random">Satunnaiset alut (10 kpl)</option>
+                                        <option value="all_starts">Kaikki 8 loogista alkua</option>
+                                        <option value="empty">Tyhjä alku &lt;bos&gt; (10 kpl)</option>
+                                    </select>
+                                </div>
+                                <button id="btn-run-batch" class="btn btn-success" style="padding: 8px 16px; font-size: 0.85rem;">Aja eräajo</button>
+                            </div>
+                        </div>
+                        
+                        <div class="stats-row" style="padding: 12px; border-radius: 8px; background: rgba(0,0,0,0.15); margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.02);">
+                            <div class="stat-box" style="padding: 0;">
+                                <span class="stat-label" style="font-size: 0.75rem;">Ajettuja lauseita</span>
+                                <strong class="stat-val" id="batch-stat-total" style="font-size: 1.25rem;">0</strong>
+                            </div>
+                            <div class="stat-box" style="padding: 0;">
+                                <span class="stat-label" style="font-size: 0.75rem;">Logiikkavirheettömät</span>
+                                <strong class="stat-val neon-text-blue" id="batch-stat-correct" style="font-size: 1.25rem;">0</strong>
+                            </div>
+                            <div class="stat-box" style="padding: 0;">
+                                <span class="stat-label" style="font-size: 0.75rem;">Onnistumisprosentti</span>
+                                <strong class="stat-val neon-text-purple" id="batch-stat-pct" style="font-size: 1.25rem;">0.0%</strong>
+                            </div>
+                        </div>
+                        
+                        <div style="width: 100%; overflow-x: auto;">
+                            <table class="vector-table" style="width: 100%; font-size: 0.82rem; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="border-bottom: 2px solid rgba(255, 255, 255, 0.08); text-align: left;">
+                                        <th style="padding: 10px; color: var(--text-muted); width: 140px;">Alkuperäinen Syöte</th>
+                                        <th style="padding: 10px; color: var(--text-muted);">Jatko (Generointi)</th>
+                                        <th style="padding: 10px; color: var(--text-muted); width: 220px;">Tila & Logiikkavalidointi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="batch-results-body">
+                                    <tr>
+                                        <td colspan="3" style="text-align: center; padding: 40px; color: var(--text-muted); font-style: italic;">
+                                            Klikkaa "Aja eräajo" käynnistääksesi generoinnin!
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- JS Skripti -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

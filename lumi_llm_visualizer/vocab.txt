@@ -1,0 +1,14 @@
+<pad>
+<bos>
+<eos>
+kissa
+koira
+hiiri
+kala
+juusto
+katsoo
+jahtaa
+syö
+nukkuu
+ja
+hyvin
