@@ -214,7 +214,8 @@ def get_status():
         "d_model": d_model,
         "d_ff": d_ff,
         "max_seq_len": max_seq_len,
-        "current_model": current_model_name
+        "current_model": current_model_name,
+        "word_types": config.get("word_types", {})
     })
 
 def background_train():

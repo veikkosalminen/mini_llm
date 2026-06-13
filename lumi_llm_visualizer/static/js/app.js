@@ -41,6 +41,7 @@ let btnRunBatch, batchModeSelect, batchResultsBody, batchStatTotal, batchStatCor
 
 let datasetData = null; // List of 1000 sentences
 let selectedVocabWord = null;
+let wordTypes = {};
 let currentNLayers = null;
 let currentNHeads = null;
 let VECTOR_STAGES_METADATA = [];
@@ -342,6 +343,7 @@ async function fetchStatus() {
         deviceName.textContent = data.device.toUpperCase();
         
         vocabularyList = data.vocab; // Tallennetaan sanasto globaalisti
+        wordTypes = data.word_types || {};
         
         if (data.current_model && data.current_model !== currentModelName) {
             currentModelName = data.current_model;
@@ -1225,14 +1227,94 @@ async function initVocabTab() {
 
 function getWordBadgeMarkup(word) {
     if (word.startsWith("<") && word.endsWith(">")) {
-        return `<span class="badge" style="background: rgba(0, 210, 255, 0.08); color: var(--neon-blue); border-color: rgba(0, 210, 255, 0.15);">Erikoissana</span>`;
-    } else if (word === "katsoo" || word === "jahtaa" || word === "syö" || word === "nukkuu") {
-        return `<span class="badge" style="background: rgba(0, 184, 148, 0.08); color: var(--neon-green); border-color: rgba(0, 184, 148, 0.15);">Verbi</span>`;
-    } else if (word === "ja" || word === "hyvin") {
-        return `<span class="badge" style="background: rgba(253, 203, 110, 0.08); color: #ffeaa7; border-color: rgba(253, 203, 110, 0.15);">Muu</span>`;
-    } else {
-        return `<span class="badge" style="background: rgba(162, 155, 254, 0.08); color: var(--neon-purple); border-color: rgba(162, 155, 254, 0.15);">Substantiivi</span>`;
+        return `<span class="badge" style="background: rgba(0, 210, 255, 0.08); color: var(--neon-blue); border-color: rgba(0, 210, 255, 0.15);">Erikoistoken</span>`;
     }
+    
+    // Etsitään dynaamisesti wordTypes-sanakirjasta
+    let category = null;
+    if (wordTypes) {
+        for (let key of Object.keys(wordTypes)) {
+            if (wordTypes[key].includes(word)) {
+                category = key;
+                break;
+            }
+        }
+    }
+    
+    // Jos dynaamista tyyppiä ei löytynyt, käytetään Lumi-kovakoodattua fallbackia
+    if (!category) {
+        if (word === "katsoo" || word === "jahtaa" || word === "syö" || word === "nukkuu") {
+            category = "verbs";
+        } else if (word === "ja" || word === "hyvin") {
+            category = "other";
+        } else {
+            category = "subjects"; // Oletus substantiivi
+        }
+    }
+
+    // Suomennetaan ja väritetään kategoriat kauniisti
+    let label = "";
+    let bgColor = "";
+    let textColor = "";
+    let borderColor = "";
+
+    switch(category) {
+        case "verbs":
+            label = "Verbi";
+            bgColor = "rgba(0, 184, 148, 0.08)";
+            textColor = "var(--neon-green)";
+            borderColor = "rgba(0, 184, 148, 0.15)";
+            break;
+        case "adjectives":
+            label = "Adjektiivi";
+            bgColor = "rgba(253, 121, 168, 0.08)";
+            textColor = "#fd79a8";
+            borderColor = "rgba(253, 121, 168, 0.15)";
+            break;
+        case "adverbs":
+            label = "Adverbi";
+            bgColor = "rgba(9, 132, 227, 0.08)";
+            textColor = "#74b9ff";
+            borderColor = "rgba(9, 132, 227, 0.15)";
+            break;
+        case "conjunctions":
+            label = "Konjunktio";
+            bgColor = "rgba(232, 67, 147, 0.08)";
+            textColor = "#e84393";
+            borderColor = "rgba(232, 67, 147, 0.15)";
+            break;
+        case "prepositions":
+            label = "Prepositio";
+            bgColor = "rgba(225, 112, 85, 0.08)";
+            textColor = "#e17055";
+            borderColor = "rgba(225, 112, 85, 0.15)";
+            break;
+        case "articles":
+            label = "Artikkeli";
+            bgColor = "rgba(253, 203, 110, 0.08)";
+            textColor = "#ffeaa7";
+            borderColor = "rgba(253, 203, 110, 0.15)";
+            break;
+        case "subjects":
+            label = "Subjekti";
+            bgColor = "rgba(162, 155, 254, 0.08)";
+            textColor = "var(--neon-purple)";
+            borderColor = "rgba(162, 155, 254, 0.15)";
+            break;
+        case "objects":
+            label = "Objekti";
+            bgColor = "rgba(250, 177, 160, 0.08)";
+            textColor = "#fab1a0";
+            borderColor = "rgba(250, 177, 160, 0.15)";
+            break;
+        default:
+            label = "Muu";
+            bgColor = "rgba(253, 203, 110, 0.08)";
+            textColor = "#ffeaa7";
+            borderColor = "rgba(253, 203, 110, 0.15)";
+    }
+
+    return `<span class="badge" style="background: ${bgColor}; color: ${textColor}; border-color: ${borderColor};">${label}</span>`;
 }
 
 function selectVocabWord(word) {

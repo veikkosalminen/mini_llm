@@ -52,33 +52,39 @@ Lause koostuu **kahdesta lausekkeesta (clause)**, jotka on yhdistetty yhdellä k
 <bos> {Lauseke 1} {Konjunktio} {Lauseke 2} <eos>
 ```
 
-### A. Täysi Lausekerakenne (Transitiivinen)
-Jokainen lauseke noudattaa seuraavaa kaavaa (jossa sulkeissa olevat osat ovat valinnaisia):
-```
-[Artikkeli] [Adjektiivi] {Subjekti} [Adverbi] {Verbi} [Artikkeli] [Adjektiivi] {Objekti} [Prepositiofraasi]
-```
-Missä prepositiofraasi on muotoa:
-```
-{Prepositio} [Artikkeli] [Adjektiivi] {Sijainti}
-```
+### A. Lausekerakenne ja Adverbin paikka (Adverb Placement)
+Jokainen täysi lauseke noudattaa peruskaavaa, mutta adverbi voi sijoittua kahdella tavalla luonnollisen englannin mukaisesti:
+1. **Verbin edessä**: `[Artikkeli] [Adjektiivi] {Subjekti} {Adverbi} {Verbi} [Artikkeli] [Adjektiivi] {Objekti} [Prepositiofraasi]`
+   * *Esimerkki:* `the pilot quietly flies the spaceship to the planet`
+2. **Lausekkeen lopussa**: `[Artikkeli] [Adjektiivi] {Subjekti} {Verbi} [Artikkeli] [Adjektiivi] {Objekti} [Prepositiofraasi] {Adverbi}`
+   * *Esimerkki:* `the pilot flies the spaceship to the planet quietly`
+   * *Huom:* Adverbi voi olla myös heti objektin jälkeen ennen prepositiofraasia: `the pilot flies the spaceship quietly to the planet`.
 
-### B. Yksinkertaistettu Lausekerakenne (Intransitiivinen)
-Jos lauseesta tulisi muuten liian pitkä (yli 18 sanaa ennen erikoismerkkejä), toisena lausekkeena käytetään lyhyttä muotoa:
-* **Ihmisille/Muukalaisille**: `the {Subjekti} escapes`
-* **Koneille/Mönkijöille**: `the {Subjekti} lands`
+Prepositiofraasi on muotoa: `{Prepositio} [Artikkeli] [Adjektiivi] {Sijainti}`.
+
+### B. Jaettu Subjekti (Subject Ellipsis)
+Jos lausekkeella 1 ja lausekkeella 2 on **sama subjekti** ja niitä yhdistää konjunktio **`and`** tai **`but`**, toisen lausekkeen subjekti (ja siihen liittyvät artikkelit/adjektiivit) voidaan jättää kokonaan pois.
+* *Luonnollinen muoto (jaettu subjekti):* `<bos> the engineer repairs the engine and activates the shield <eos>`
+* *Toistava muoto (täysi):* `<bos> the engineer repairs the engine and the engineer activates the shield <eos>`
+*Molemmat muodot ovat kieliopillisesti valideja.*
+
+### C. Yksinkertaistettu Lausekerakenne (Intransitiivinen)
+Pituuden rajoittamiseksi toisena lausekkeena voidaan käyttää lyhyttä intransitiivista muotoa:
+* **Ihmisille/Muukalaisille**: `[Artikkeli] [Adjektiivi] {Subjekti} [Adverbi] escapes` (tai adverbilla lopussa)
+* **Koneille/Mönkijöille**: `[Artikkeli] [Adjektiivi] {Subjekti} [Adverbi] lands` (tai adverbilla lopussa)
 
 ---
 
 ## 3. Oikea Englannin kielioppi: "a" vs "an"
 
- ORION-kieli toteuttaa aidon englannin kielen mukaisen artikkelivalinnan. Indefiniittisen artikkelin on täsmättävä seuraavan sanan (adjektiivin tai substantiivin) ensimmäisen kirjaimen mukaan:
+ORION-kieli toteuttaa aitoa englannin kieltä vastaavan artikkelivalinnan. Indefiniittisen artikkelin on täsmättävä seuraavan sanan (adjektiivin tai substantiivin) ensimmäisen kirjaimen mukaan:
 
 * **`an`** valitaan, jos seuraava sana alkaa **vokaalilla** (`a`, `e`, `i`, `o`, `u`):
   * *Esimerkkejä:* **`an`** `astronaut`, **`an`** `alien`, **`an`** `engineer`, **`an`** `ancient spaceship`, **`an`** `active robot`, **`an`** `empty station`
 * **`a`** valitaan, jos seuraava sana alkaa **konsonantilla**:
   * *Esimerkkejä:* **`a`** `pilot`, **`a`** `commander`, **`a`** `small asteroid`, **`a`** `mysterious signal`
 
-*Tämän säännön rikkominen (esim. `a astronaut` tai `an pilot`) hylätään kielioppivalidaattorissa.*
+*Tämän säännön rikkominen (esim. `a astronaut` tai `an pilot`) hylätään validaattorissa.*
 
 ---
 
@@ -105,33 +111,45 @@ Jotta kieli kuulostaisi järkevältä, kielessä on tiukat semanttiset säännö
 * **Tarpeet** (`needs`): kohdistuu resursseihin tai suojiin.
 * **Pelko** (`fears`): kohdistuu uhkiin tai tyhjyyteen (`anomaly`, `void`, `radiation`, `alien`, `creature`).
 
-### C. Prepositiot ja Sijainnit (Loogiset suhteet)
-Prepositiot eivät voi liittyä satunnaisiin sanoihin, vaan niiden on muodostettava järkeviä avaruusteemaisia ilmauksia:
-* **`into`** (sisäänmeneminen): sijainnin on oltava suljettu tila tai säiliö:
-  * *Sallitut:* `spaceship`, `station`, `planet`, `moon`, `star`, `galaxy`, `asteroid`, `void`, `nebula`, `anomaly`
-* **`on`** (pinnalla olo): sijainnin on oltava fyysinen taso/pinta:
-  * *Sallitut:* `spaceship`, `station`, `planet`, `moon`, `asteroid`
-* **`to`** / **`from`** (liike johonkin/jostakin): sijainti voi olla avaruuskohde tai toinen henkilö:
-  * *Sallitut:* kaikki suuret avaruuskohteet sekä kaikki toimijat (ihmiset/koneet/alienit)
-* **`with`** (seurassa/avulla): sijainnin on oltava toinen toimija tai kannettava esine/työkalu:
-  * *Sallitut:* kaikki toimijat sekä `crystal`, `data`, `signal`, `laser`, `shield`
-* **`near`** (läheisyys): sijainti voi olla mikä tahansa fyysinen esine, paikka tai toimija:
-  * *Sallitut:* kaikki kohteet ja toimijat paitsi abstraktit ilmiöt (kuten säteily tai painovoima)
+### C. Verbikohtainen prepositioiden valinta
+Prepositiot ja niiden sijainnit/kohteet valitaan loogisesti verbin mukaan, jotta vältetään järjettömät rakenteet (esim. *"repairs the engine into the moon"*):
+
+1. **`with` (Väline/Instrumentti)**:
+   * Sallittu vain toiminta- ja tutkimusverbeille: `repairs`, `activates`, `attacks`, `protects`, `controls`, `harvests`, `scans`, `studies`.
+   * Vastaavan kohteen on oltava työkalu tai resurssi: `laser`, `shield`, `crystal`, `data`, `signal` (tai toinen toimija kumppanina).
+   * *Esimerkki:* `repairs the engine with a laser`, `attacks the alien with a shield`.
+2. **`to` / `from` (Suunta/Alkuperä)**:
+   * Sallittu vain siirto-, viestintä- ja liikeverbeille: `transmits`, `flies`, `escapes`, `reaches`, `lands`.
+   * Kohteen on oltava avaruuskohde tai toimija (vastaanottaja).
+   * *Esimerkki:* `transmits the signal to the commander`, `escapes from the alien`.
+3. **`into` (Sisäänmeno)**:
+   * Sallittu vain verbeille, jotka kuvaavat menemistä, liikkumista tai kohdistamista tilaan: `enters`, `flies`, `escapes`, `reaches`, `scans`, `observes`, `detects`.
+   * Kohteen on oltava suljettu tila tai alue: `spaceship`, `station`, `void`, `nebula`, `anomaly`.
+   * *Esimerkki:* `enters the spaceship into the nebula`.
+4. **`on` (Pinnalla olo / Laskeutuminen)**:
+   * Sallittu vain laskeutumiselle ja havainnoinnille: `lands`, `observes`, `detects`, `scans`, `explores`.
+   * Kohteen on oltava fyysinen taso/pinta: `planet`, `moon`, `asteroid`, `spaceship`, `station`.
+   * *Esimerkki:* `lands the rover on the moon`.
+5. **`near` (Läheisyys)**:
+   * Sallittu laajasti useimmille verbeille kuvaamaan fyysistä sijaintia. Ei kuitenkaan abstrakteille ilmiöille (kuten `gravity` tai `radiation`).
+   * *Esimerkki:* `observes the star near the galaxy`.
 
 ---
 
 ## 5. Esimerkkejä
 
 ### Oikeelliset lauseet (Sallittu opetusdata)
-* `<bos> an astronaut carefully scans the unknown anomaly and a robot transmits the data <eos>`
-  *(Huomaa artikkeli: **an** astronaut ja **an** unknown anomaly. Täysin sallittua englantia.)*
-* `<bos> the smart scientist enters into the empty spaceship while an alien lands on the moon <eos>`
-  *(Huomaa prepositiot: enters **into** ... lands **on**.)*
+* `<bos> an astronaut carefully scans the unknown anomaly and transmits the data <eos>`
+  *(Jaettu subjekti `an astronaut` molemmissa lausekkeissa, toinen verbi ilman turhaa toistoa.)*
+* `<bos> the engineer repairs the engine with a laser while a robot activates the shield <eos>`
+  *(Välineprepositio: repairs ... with a laser.)*
+* `<bos> the pilot flies the spaceship to the station safely but the drone lands on the planet <eos>`
+  *(Adverbi `safely` lausekkeen lopussa prep-fraasin jälkeen.)*
 
 ### Virheelliset lauseet (Hylätään validoinnissa)
 * `* <bos> a astronaut scans the planet <eos>`
-  *Syy:* Syntaktinen virhe (**a** astronaut vokaalialkuisen sanan edessä — odotettiin **an**).
-* `* <bos> the commander enters into an astronaut <eos>`
-  *Syy:* Semanttinen virhe (ihmisen sisään ei voi mennä `into`-prepositiolla).
+  *Syy:* Artikkelivirhe (a astronaut -> pitäisi olla *an*).
+* `* <bos> the commander repairs the engine into the moon <eos>`
+  *Syy:* Väärä prepositio (repairs ... into -> pitäisi olla *with*).
 * `* <bos> the robot lands on the radiation <eos>`
-  *Syy:* Säteilyn pinnalle ei voi laskeutua (`radiation` ei ole sallittu sijainti `on`-prepositiolle).
+  *Syy:* Laskeutuminen säteilyn päälle ei ole fyysisesti mahdollista (`radiation` ei ole pinta).

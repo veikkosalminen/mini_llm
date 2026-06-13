@@ -3,11 +3,8 @@ import json
 import random
 
 def alusta_frost_malli():
-    # Nykyinen tiedosto on utils-kansiossa
-    project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    models_dir = os.path.join(project_dir, 'models')
-    frost_dir = os.path.join(models_dir, 'frost')
-    os.makedirs(frost_dir, exist_ok=True)
+    # Tämä tiedosto sijaitsee models/frost/ -kansiossa
+    frost_dir = os.path.dirname(os.path.abspath(__file__))
     
     # 1. config.json
     config = {
@@ -94,7 +91,7 @@ def alusta_frost_malli():
     with open(os.path.join(frost_dir, 'dataset.txt'), 'w', encoding='utf-8') as f:
         f.write("\n".join(sentences) + "\n")
 
-    print("Frost model files generated successfully!")
+    print("Frost model files generated successfully inside models/frost/!")
 
 if __name__ == '__main__':
     alusta_frost_malli()

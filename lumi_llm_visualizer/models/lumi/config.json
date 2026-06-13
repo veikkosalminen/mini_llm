@@ -6,5 +6,12 @@
   "max_seq_len": 20,
   "dropout": 0.1,
   "vocab_path": "vocab.txt",
-  "dataset_path": "dataset.txt"
+  "dataset_path": "dataset.txt",
+  "word_types": {
+    "verbs": ["katsoo", "jahtaa", "syö", "nukkuu"],
+    "conjunctions": ["ja"],
+    "adverbs": ["hyvin"],
+    "subjects": ["kissa", "koira", "hiiri"],
+    "objects": ["juusto", "kala"]
+  }
 }
